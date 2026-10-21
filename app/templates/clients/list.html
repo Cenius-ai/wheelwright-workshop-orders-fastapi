@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block rail_filters %}
+<div class="rail__filters">
+  <form method="get" action="/clients" class="stack stack--tight">
+    <span class="facet__title">Find a client</span>
+    <label class="visually-hidden" for="client-search">Search the heritage register</label>
+    <input
+      class="input"
+      id="client-search"
+      name="q"
+      type="search"
+      value="{{ search }}"
+      placeholder="Name or email"
+    />
+    <div class="btn-row">
+      <button class="btn btn--ghost btn--sm" type="submit">Search</button>
+      {% if search %}<a class="btn btn--ghost btn--sm" href="/clients">Clear</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<a class="btn btn--ghost" href="/wheels/new">Record a build</a>
+{% endblock %}
+
+{% block content %}
+{% if search %}
+<div class="chips">
+  <span class="chip">Search: {{ search }}</span>
+  <a class="chip chip--clear" href="/clients">Clear search</a>
+</div>
+{% endif %}
+
+<div class="detail-layout">
+  <section class="panel">
+    <div class="panel__head">
+      <h2 class="panel__title">
+        {% if search %}{{ rows|length }} of {{ total }} heritage clients{% else %}{{ total }} heritage commission clients{% endif %}
+      </h2>
+      <span class="panel__meta">Commission briefs on the register</span>
+    </div>
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table class="table table--stack">
+        <caption class="visually-hidden">Heritage commission clients and their commissioned wheel counts</caption>
+        <thead>
+          <tr>
+            <th scope="col">Client</th>
+            <th scope="col">Contact</th>
+            <th scope="col" class="num">Wheels commissioned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td data-label="Client">
+              <a class="cell-strong" href="/clients/{{ row.client.id }}">{{ row.client.name }}</a>
+              <span class="cell-sub">{{ row.client.heritage_notes|truncate(88, true, '…') if row.client.heritage_notes else 'No brief recorded yet' }}</span>
+            </td>
+            <td data-label="Contact">
+              {{ row.client.contact_email or 'No email recorded' }}
+              <span class="cell-sub mono-num">{{ row.client.phone or 'No phone recorded' }}</span>
+            </td>
+            <td data-label="Wheels commissioned" class="num">{{ row.commission_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% elif search %}
+    <div class="empty">
+      <h2 class="empty__title">No client matches “{{ search }}”</h2>
+      <p class="empty__text">Check the spelling, or clear the search to see the whole register.</p>
+      <a class="btn btn--ghost" href="/clients">Clear search</a>
+    </div>
+    {% else %}
+    <div class="empty">
+      <h2 class="empty__title">No heritage clients yet</h2>
+      <p class="empty__text">
+        Add the first commission client with the panel beside this list — the name is required, contact
+        details and the heritage brief are not.
+      </p>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="panel panel--slide" id="add-client">
+    <div class="panel__head">
+      <h2 class="panel__title">Add a heritage client</h2>
+      <span class="panel__meta">Name required</span>
+    </div>
+    <div class="panel__body">
+      <form class="form" method="post" action="/clients" data-guard="client" novalidate>
+        <div class="field">
+          <label for="name">Client name</label>
+          <input
+            class="input"
+            id="name"
+            name="name"
+            type="text"
+            value="{{ values.name }}"
+            placeholder="Bodmin Heritage Trust"
+            autocomplete="organization"
+            {% if field_errors.get('name') %}aria-invalid="true" aria-describedby="name-error"{% endif %}
+            required
+          />
+          {% if field_errors.get('name') %}
+          <span class="field-error" id="name-error">{{ field_errors.get('name') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="contact_email">Contact email</label>
+          <input
+            class="input"
+            id="contact_email"
+            name="contact_email"
+            type="email"
+            inputmode="email"
+            value="{{ values.contact_email }}"
+            autocomplete="email"
+            spellcheck="false"
+            {% if field_errors.get('contact_email') %}aria-invalid="true" aria-describedby="email-error"{% endif %}
+          />
+          {% if field_errors.get('contact_email') %}
+          <span class="field-error" id="email-error">{{ field_errors.get('contact_email') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone</label>
+          <input
+            class="input"
+            id="phone"
+            name="phone"
+            type="tel"
+            inputmode="tel"
+            value="{{ values.phone }}"
+            autocomplete="tel"
+            {% if field_errors.get('phone') %}aria-invalid="true" aria-describedby="phone-error"{% endif %}
+          />
+          {% if field_errors.get('phone') %}
+          <span class="field-error" id="phone-error">{{ field_errors.get('phone') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="heritage_notes">Heritage brief</label>
+          <textarea
+            class="textarea"
+            id="heritage_notes"
+            name="heritage_notes"
+            rows="5"
+            placeholder="What is being commissioned, which period it belongs to and how it will be used."
+          >{{ values.heritage_notes }}</textarea>
+          <span class="hint">Saved with the client and shown on their page.</span>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" data-primary>Add client</button>
+        </div>
+      </form>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% set v = submitted if submitted else {
+  'reference': build.reference,
+  'client_id': (build.client_id|string) if build.client_id else '',
+  'felloe_count': build.felloe_count,
+  'spoke_count': build.spoke_count,
+  'diameter_inches': build.diameter_inches|float,
+  'status': build.status,
+  'notes': build.notes
+} %}
+
+{% block page_actions %}
+<a class="btn btn--ghost" href="/wheels">Back to builds</a>
+<a class="btn btn--primary" href="/schedule?wheel_id={{ build.id }}">Book a tyre fitting</a>
+{% endblock %}
+
+{% block content %}
+{% if field_errors %}
+<div class="notice notice--error" role="alert">The build was not saved. Check the highlighted fields.</div>
+{% endif %}
+
+<div class="detail-layout">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title mono-num">{{ build.reference }}</h2>
+        <span class="pill pill--{{ build.status }}">{{ build.status_label }}</span>
+      </div>
+      <div class="panel__body stack">
+        <dl class="summary-list">
+          <div>
+            <dt>Heritage client</dt>
+            <dd>
+              {% if build.client %}
+              <a href="/clients/{{ build.client.id }}">{{ build.client.name }}</a>
+              {% else %}
+              <span class="muted">No commission linked</span>
+              {% endif %}
+            </dd>
+          </div>
+          <div>
+            <dt>Felloes</dt>
+            <dd>{{ build.felloe_count }}</dd>
+          </div>
+          <div>
+            <dt>Spokes</dt>
+            <dd>{{ build.spoke_count }}</dd>
+          </div>
+          <div>
+            <dt>Diameter</dt>
+            <dd>{{ build.diameter_display }}</dd>
+          </div>
+          <div>
+            <dt>Recorded</dt>
+            <dd>{{ build.created_at|human_date }}</dd>
+          </div>
+          <div>
+            <dt>Recorded by</dt>
+            <dd>{{ build.created_by.name if build.created_by else 'Workshop staff' }}</dd>
+          </div>
+        </dl>
+        {% if build.notes %}
+        <div>
+          <h3 class="facet__title">Workshop notes</h3>
+          <p class="prose">{{ build.notes }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title">Iron tyre fittings</h2>
+        <a class="panel__meta" href="/schedule">Open schedule</a>
+      </div>
+      <div class="panel__body">
+        {% if fittings %}
+        <div class="fitting-list stagger">
+          {% for booking in fittings %}
+          <article class="fitting-row">
+            <span class="fitting-row__when">{{ booking.scheduled_at|human_datetime }}</span>
+            <span class="fitting-row__main">
+              <span class="pill pill--{{ booking.status }}">{{ booking.status_label }}</span>
+              {% if booking.notes %}<span class="muted">{{ booking.notes }}</span>{% endif %}
+            </span>
+            {% if booking.status == 'scheduled' %}
+            <span class="btn-row">
+              <form method="post" action="/schedule/{{ booking.id }}/status">
+                <input type="hidden" name="status" value="completed" />
+                <button type="submit" class="btn btn--ghost btn--sm">Mark complete</button>
+              </form>
+              <form method="post" action="/schedule/{{ booking.id }}/status">
+                <input type="hidden" name="status" value="cancelled" />
+                <button type="submit" class="btn btn--danger btn--sm">Cancel fitting</button>
+              </form>
+            </span>
+            {% else %}
+            <span class="muted">No action needed</span>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+          <p class="empty__text">No iron tyre fittings are booked for this wheel yet.</p>
+          <a class="btn btn--primary" href="/schedule?wheel_id={{ build.id }}">Book this wheel into a fitting slot</a>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <aside class="panel panel--slide">
+    <div class="panel__head">
+      <h2 class="panel__title">Edit this build</h2>
+      <span class="panel__meta">Saves straight to the build book</span>
+    </div>
+    <div class="panel__body">
+      <form class="form" method="post" action="/wheels/{{ build.id }}" data-guard="build-edit" novalidate>
+        <div class="field">
+          <label for="reference">Build reference</label>
+          <input
+            class="input"
+            id="reference"
+            name="reference"
+            type="text"
+            value="{{ v.reference }}"
+            autocomplete="off"
+            spellcheck="false"
+            {% if field_errors.get('reference') %}aria-invalid="true" aria-describedby="reference-error"{% endif %}
+            required
+          />
+          {% if field_errors.get('reference') %}
+          <span class="field-error" id="reference-error">{{ field_errors.get('reference') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="client_id">Heritage client</label>
+          <select class="select" id="client_id" name="client_id" {% if field_errors.get('client_id') %}aria-invalid="true" aria-describedby="client-error"{% endif %}>
+            <option value="">No heritage commission — workshop wheel</option>
+            {% for client in clients %}
+            <option value="{{ client.id }}" {% if v.client_id == client.id|string %}selected{% endif %}>{{ client.name }}</option>
+            {% endfor %}
+          </select>
+          {% if field_errors.get('client_id') %}
+          <span class="field-error" id="client-error">{{ field_errors.get('client_id') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="felloe_count">Felloes</label>
+            <input
+              class="input"
+              id="felloe_count"
+              name="felloe_count"
+              type="number"
+              min="4"
+              max="20"
+              step="1"
+              value="{{ v.felloe_count }}"
+              {% if field_errors.get('felloe_count') %}aria-invalid="true" aria-describedby="felloe-error"{% endif %}
+              required
+            />
+            {% if field_errors.get('felloe_count') %}
+            <span class="field-error" id="felloe-error">{{ field_errors.get('felloe_count') }}</span>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label for="spoke_count">Spokes</label>
+            <input
+              class="input"
+              id="spoke_count"
+              name="spoke_count"
+              type="number"
+              min="8"
+              max="24"
+              step="1"
+              value="{{ v.spoke_count }}"
+              {% if field_errors.get('spoke_count') %}aria-invalid="true" aria-describedby="spoke-error"{% endif %}
+              required
+            />
+            {% if field_errors.get('spoke_count') %}
+            <span class="field-error" id="spoke-error">{{ field_errors.get('spoke_count') }}</span>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label for="diameter_inches">Diameter (in)</label>
+            <input
+              class="input"
+              id="diameter_inches"
+              name="diameter_inches"
+              type="number"
+              min="24"
+              max="72"
+              step="0.5"
+              value="{{ v.diameter_inches }}"
+              {% if field_errors.get('diameter_inches') %}aria-invalid="true" aria-describedby="diameter-error"{% endif %}
+              required
+            />
+            {% if field_errors.get('diameter_inches') %}
+            <span class="field-error" id="diameter-error">{{ field_errors.get('diameter_inches') }}</span>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label for="status">Status</label>
+            <select class="select" id="status" name="status">
+              {% for status, label in build_status_labels.items() %}
+              <option value="{{ status }}" {% if v.status == status %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="notes">Workshop notes</label>
+          <textarea class="textarea" id="notes" name="notes" rows="4">{{ v.notes }}</textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" data-primary>Save changes</button>
+          <a class="btn btn--ghost" href="/wheels/{{ build.id }}">Reset</a>
+        </div>
+      </form>
+    </div>
+    <div class="panel__head">
+      <h2 class="panel__title">Remove this build</h2>
+    </div>
+    <div class="panel__body">
+      <p class="muted">Deleting removes the wheel and any iron tyre fittings booked for it. This cannot be undone.</p>
+      <form method="post" action="/wheels/{{ build.id }}/delete" data-confirm="Delete {{ build.reference }} and its fitted bookings? This cannot be undone.">
+        <button type="submit" class="btn btn--danger">Delete {{ build.reference }}</button>
+      </form>
+    </div>
+  </aside>
+</div>
+{% endblock %}

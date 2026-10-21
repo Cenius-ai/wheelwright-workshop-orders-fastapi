@@ -1,0 +1,102 @@
+{% extends "auth_base.html" %}
+{% block content %}
+<div class="stack stack--tight">
+  <h1 class="auth__title">Create a staff account</h1>
+  <p class="auth__sub">The first account created becomes the workshop admin.</p>
+</div>
+
+{% if field_errors %}
+<div class="notice notice--error" role="alert">Check the highlighted fields and try again.</div>
+{% endif %}
+
+<form class="form" method="post" action="/register" data-guard="register" novalidate>
+  <div class="field">
+    <label for="name">Full name</label>
+    <input
+      class="input"
+      id="name"
+      name="name"
+      type="text"
+      value="{{ values.name }}"
+      autocomplete="name"
+      {% if field_errors.get('name') %}aria-invalid="true" aria-describedby="name-error"{% endif %}
+      required
+    />
+    {% if field_errors.get('name') %}
+    <span class="field-error" id="name-error">{{ field_errors.get('name') }}</span>
+    {% endif %}
+  </div>
+
+  <div class="field">
+    <label for="email">Work email</label>
+    <input
+      class="input"
+      id="email"
+      name="email"
+      type="email"
+      value="{{ values.email }}"
+      autocomplete="username"
+      inputmode="email"
+      spellcheck="false"
+      {% if field_errors.get('email') %}aria-invalid="true" aria-describedby="email-error"{% endif %}
+      required
+    />
+    {% if field_errors.get('email') %}
+    <span class="field-error" id="email-error">{{ field_errors.get('email') }}</span>
+    {% endif %}
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <div class="password-wrap">
+      <input
+        class="input"
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="new-password"
+        minlength="8"
+        {% if field_errors.get('password') %}aria-invalid="true" aria-describedby="password-error"{% endif %}
+        required
+      />
+      <button
+        type="button"
+        class="password-toggle"
+        data-password-toggle="password"
+        aria-controls="password"
+        aria-pressed="false"
+        aria-label="Show password"
+      >Show</button>
+    </div>
+    <span class="hint">At least 8 characters.</span>
+    {% if field_errors.get('password') %}
+    <span class="field-error" id="password-error">{{ field_errors.get('password') }}</span>
+    {% endif %}
+  </div>
+
+  <div class="field">
+    <label for="confirm_password">Confirm password</label>
+    <input
+      class="input"
+      id="confirm_password"
+      name="confirm_password"
+      type="password"
+      autocomplete="new-password"
+      {% if field_errors.get('confirm_password') %}aria-invalid="true" aria-describedby="confirm-password-error"{% endif %}
+      required
+    />
+    {% if field_errors.get('confirm_password') %}
+    <span class="field-error" id="confirm-password-error">{{ field_errors.get('confirm_password') }}</span>
+    {% endif %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn--primary" data-primary>Create account</button>
+    <a href="/login" class="btn btn--ghost">Back to sign in</a>
+  </div>
+</form>
+
+<div class="auth__foot">
+  <p>Already have an account? <a href="/login">Sign in</a>.</p>
+</div>
+{% endblock %}

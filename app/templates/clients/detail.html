@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% set v = submitted if submitted else {
+  'name': client.name,
+  'contact_email': client.contact_email or '',
+  'phone': client.phone or '',
+  'heritage_notes': client.heritage_notes or ''
+} %}
+
+{% block page_actions %}
+<a class="btn btn--ghost" href="/clients">Back to clients</a>
+<a class="btn btn--primary" href="/wheels/new?client_id={{ client.id }}">Start a build for this client</a>
+{% endblock %}
+
+{% block content %}
+{% if field_errors %}
+<div class="notice notice--error" role="alert">The client details were not saved. Check the highlighted fields.</div>
+{% endif %}
+
+<div class="detail-layout">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title">{{ client.name }}</h2>
+        <span class="panel__meta">On the register since {{ client.created_at|human_date }}</span>
+      </div>
+      <div class="panel__body stack">
+        <dl class="summary-list">
+          <div>
+            <dt>Contact email</dt>
+            <dd>{{ client.contact_email or '—' }}</dd>
+          </div>
+          <div>
+            <dt>Phone</dt>
+            <dd>{{ client.phone or '—' }}</dd>
+          </div>
+          <div>
+            <dt>Wheels commissioned</dt>
+            <dd>{{ builds|length }}</dd>
+          </div>
+        </dl>
+        <div>
+          <h3 class="facet__title">Heritage brief</h3>
+          {% if client.heritage_notes %}
+          <p class="prose">{{ client.heritage_notes }}</p>
+          {% else %}
+          <p class="muted">No heritage brief has been recorded for this client yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title">Commissioned wheels</h2>
+        <span class="panel__meta">{{ builds|length }} on the build book</span>
+      </div>
+      {% if builds %}
+      <div class="table-wrap">
+        <table class="table table--stack">
+          <caption class="visually-hidden">Cartwheel builds commissioned by this client</caption>
+          <thead>
+            <tr>
+              <th scope="col">Build</th>
+              <th scope="col" class="num">Felloes</th>
+              <th scope="col" class="num">Spokes</th>
+              <th scope="col" class="num">Diameter</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for build in builds %}
+            <tr{% if build.is_complete %} class="is-muted"{% endif %}>
+              <td data-label="Build">
+                <a class="ref mono-num" href="/wheels/{{ build.id }}">{{ build.reference }}</a>
+                <span class="cell-sub">{{ build.created_at.date()|relative_day }}</span>
+              </td>
+              <td data-label="Felloes" class="num">{{ build.felloe_count }}</td>
+              <td data-label="Spokes" class="num">{{ build.spoke_count }}</td>
+              <td data-label="Diameter" class="num">{{ build.diameter_display }}</td>
+              <td data-label="Status"><span class="pill pill--{{ build.status }}">{{ build.status_label }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">
+        <p class="empty__text">No wheel builds are linked to this client yet.</p>
+        <a class="btn btn--primary" href="/wheels/new?client_id={{ client.id }}">Start a build for {{ client.name }}</a>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="panel panel--slide">
+    <div class="panel__head">
+      <h2 class="panel__title">Edit client details</h2>
+      <span class="panel__meta">Updates the register</span>
+    </div>
+    <div class="panel__body">
+      <form class="form" method="post" action="/clients/{{ client.id }}" data-guard="client-edit" novalidate>
+        <div class="field">
+          <label for="name">Client name</label>
+          <input
+            class="input"
+            id="name"
+            name="name"
+            type="text"
+            value="{{ v.name }}"
+            autocomplete="organization"
+            {% if field_errors.get('name') %}aria-invalid="true" aria-describedby="name-error"{% endif %}
+            required
+          />
+          {% if field_errors.get('name') %}
+          <span class="field-error" id="name-error">{{ field_errors.get('name') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="contact_email">Contact email</label>
+          <input
+            class="input"
+            id="contact_email"
+            name="contact_email"
+            type="email"
+            inputmode="email"
+            value="{{ v.contact_email }}"
+            autocomplete="email"
+            spellcheck="false"
+            {% if field_errors.get('contact_email') %}aria-invalid="true" aria-describedby="email-error"{% endif %}
+          />
+          {% if field_errors.get('contact_email') %}
+          <span class="field-error" id="email-error">{{ field_errors.get('contact_email') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone</label>
+          <input
+            class="input"
+            id="phone"
+            name="phone"
+            type="tel"
+            inputmode="tel"
+            value="{{ v.phone }}"
+            autocomplete="tel"
+            {% if field_errors.get('phone') %}aria-invalid="true" aria-describedby="phone-error"{% endif %}
+          />
+          {% if field_errors.get('phone') %}
+          <span class="field-error" id="phone-error">{{ field_errors.get('phone') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="heritage_notes">Heritage brief</label>
+          <textarea class="textarea" id="heritage_notes" name="heritage_notes" rows="6">{{ v.heritage_notes }}</textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" data-primary>Save client</button>
+          <a class="btn btn--ghost" href="/clients/{{ client.id }}">Reset</a>
+        </div>
+      </form>
+    </div>
+  </aside>
+</div>
+{% endblock %}

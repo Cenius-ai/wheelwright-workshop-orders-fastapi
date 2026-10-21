@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block rail_filters %}
+<div class="rail__filters">
+  <form method="get" action="/wheels" class="stack stack--tight">
+    <span class="facet__title">Filter the build book</span>
+    <label class="visually-hidden" for="build-search">Search builds by reference or client</label>
+    <input
+      class="input"
+      id="build-search"
+      name="q"
+      type="search"
+      value="{{ search }}"
+      placeholder="Reference, client or note"
+    />
+    <div class="facet">
+      <span class="facet__title">Build status</span>
+      {% for status, label in build_status_labels.items() %}
+      <label class="check">
+        <input type="checkbox" name="status" value="{{ status }}" {% if status in selected_statuses %}checked{% endif %} />
+        <span>{{ label }}</span>
+        <span class="check__count">{{ counts[status] }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="btn-row">
+      <button class="btn btn--ghost btn--sm" type="submit">Apply filters</button>
+      {% if filters_active %}<a class="btn btn--ghost btn--sm" href="/wheels">Clear all</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<a class="btn btn--primary" href="/wheels/new">New build</a>
+{% endblock %}
+
+{% block content %}
+{% if load_error %}
+<div class="notice notice--error" role="alert">{{ load_error }} <a href="/wheels">Try again</a></div>
+{% endif %}
+
+{% if filters_active %}
+<div class="chips" aria-label="Active filters">
+  {% if search %}<span class="chip">Search: {{ search }}</span>{% endif %}
+  {% for status in selected_statuses %}<span class="chip">{{ build_status_labels[status] }}</span>{% endfor %}
+  <a class="chip chip--clear" href="/wheels">Clear all filters</a>
+</div>
+{% endif %}
+
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title">
+      {% if filters_active %}{{ builds|length }} of {{ total }} builds{% else %}{{ total }} builds in the book{% endif %}
+    </h2>
+    <span class="panel__meta">Open builds first, newest at the top</span>
+  </div>
+
+  {% if builds %}
+  <div class="table-wrap">
+    <table class="table table--stack">
+      <caption class="visually-hidden">Cartwheel builds with felloe and spoke counts</caption>
+      <thead>
+        <tr>
+          <th scope="col">Build</th>
+          <th scope="col">Heritage client</th>
+          <th scope="col" class="num">Felloes</th>
+          <th scope="col" class="num">Spokes</th>
+          <th scope="col" class="num">Diameter</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for build in builds %}
+        <tr{% if build.is_complete %} class="is-muted"{% endif %}>
+          <td data-label="Build">
+            <a class="ref mono-num" href="/wheels/{{ build.id }}">{{ build.reference }}</a>
+            <span class="cell-sub">{{ build.created_at.date()|relative_day }}</span>
+          </td>
+          <td data-label="Client">
+            {% if build.client %}
+            <a href="/clients/{{ build.client.id }}">{{ build.client.name }}</a>
+            {% else %}
+            <span class="muted">Unassigned commission</span>
+            {% endif %}
+          </td>
+          <td data-label="Felloes" class="num">{{ build.felloe_count }}</td>
+          <td data-label="Spokes" class="num">{{ build.spoke_count }}</td>
+          <td data-label="Diameter" class="num">{{ build.diameter_display }}</td>
+          <td data-label="Status">
+            <span class="pill pill--{{ build.status }}">{{ build.status_label }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif filters_active %}
+  <div class="empty">
+    <h2 class="empty__title">No builds match those filters</h2>
+    <p class="empty__text">Nothing in the book matches the search and status filters you picked.</p>
+    <a class="btn btn--ghost" href="/wheels">Clear all filters</a>
+  </div>
+  {% else %}
+  <div class="empty">
+    <h2 class="empty__title">No cartwheel builds yet</h2>
+    <p class="empty__text">
+      Every wheel in the workshop starts here: record the reference, how many felloes and spokes it takes,
+      and which heritage commission it belongs to.
+    </p>
+    <a class="btn btn--primary" href="/wheels/new">Record the first build</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block page_actions %}
+<a class="btn btn--primary" href="/wheels/new">New build</a>
+<a class="btn btn--ghost" href="/schedule">Fitting schedule</a>
+{% endblock %}
+
+{% block content %}
+{% if load_error %}
+<div class="notice notice--error" role="alert">
+  {{ load_error }} <a href="/">Retry the overview</a>
+</div>
+{% endif %}
+
+{% if total_builds == 0 %}
+<section class="panel">
+  <div class="empty">
+    <h2 class="empty__title">The build book is empty</h2>
+    <p class="empty__text">
+      Record the first cartwheel build — reference, felloe count, spoke count and diameter — and it will
+      appear here with its heritage client and iron tyre fittings.
+    </p>
+    <a class="btn btn--primary" href="/wheels/new">Record the first build</a>
+  </div>
+</section>
+{% endif %}
+
+<section class="stat-grid stagger" aria-label="Workshop at a glance">
+  <article class="stat">
+    <span class="stat__label">Open builds</span>
+    <span class="stat__value">{{ open_builds }}</span>
+    <span class="stat__meta">In build or awaiting an iron tyre</span>
+  </article>
+  <article class="stat stat--live">
+    <span class="stat__label">Upcoming fittings</span>
+    <span class="stat__value">{{ upcoming_fittings }}</span>
+    <span class="stat__meta">Scheduled from now on</span>
+  </article>
+  <article class="stat">
+    <span class="stat__label">Heritage clients</span>
+    <span class="stat__value">{{ client_count }}</span>
+    <span class="stat__meta">Commission briefs on the register</span>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title">Today's iron tyre fittings</h2>
+    <span class="panel__meta">{{ today|human_date }}</span>
+  </div>
+  {% if todays_fittings %}
+  <div class="table-wrap">
+    <table class="table table--stack">
+      <caption class="visually-hidden">Iron tyre fittings booked for today</caption>
+      <thead>
+        <tr>
+          <th scope="col">Time</th>
+          <th scope="col">Wheel</th>
+          <th scope="col">Heritage client</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in todays_fittings %}
+        <tr>
+          <td data-label="Time" class="mono-num">{{ booking.time_display }}</td>
+          <td data-label="Wheel">
+            <a class="ref mono-num" href="/wheels/{{ booking.wheel.id }}">{{ booking.wheel.reference }}</a>
+            <span class="cell-sub">{{ booking.notes }}</span>
+          </td>
+          <td data-label="Client">{{ booking.wheel.client_name }}</td>
+          <td data-label="Status"><span class="pill pill--{{ booking.status }}">{{ booking.status_label }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <p class="empty__text">No fittings are booked for today.</p>
+    <a class="btn btn--ghost" href="/schedule">Book an iron tyre fitting</a>
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title">Recent builds</h2>
+    <a class="panel__meta" href="/wheels">All {{ total_builds }} builds</a>
+  </div>
+  {% if recent_builds %}
+  <div class="table-wrap">
+    <table class="table table--stack">
+      <caption class="visually-hidden">The most recent cartwheel builds</caption>
+      <thead>
+        <tr>
+          <th scope="col">Build</th>
+          <th scope="col">Heritage client</th>
+          <th scope="col" class="num">Felloes</th>
+          <th scope="col" class="num">Spokes</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for build in recent_builds %}
+        <tr{% if build.is_complete %} class="is-muted"{% endif %}>
+          <td data-label="Build">
+            <a class="ref mono-num" href="/wheels/{{ build.id }}">{{ build.reference }}</a>
+            <span class="cell-sub">Added {{ build.created_at.date()|relative_day }}</span>
+          </td>
+          <td data-label="Client">{{ build.client_name }}</td>
+          <td data-label="Felloes" class="num">{{ build.felloe_count }}</td>
+          <td data-label="Spokes" class="num">{{ build.spoke_count }}</td>
+          <td data-label="Status"><span class="pill pill--{{ build.status }}">{{ build.status_label }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <p class="empty__text">No cartwheel builds recorded yet.</p>
+    <a class="btn btn--ghost" href="/wheels/new">Record a build</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

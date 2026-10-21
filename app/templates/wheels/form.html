@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block page_actions %}
+<a class="btn btn--ghost" href="/wheels">Back to builds</a>
+{% endblock %}
+
+{% block content %}
+<div class="detail-layout">
+  <section class="panel">
+    <div class="panel__head">
+      <h2 class="panel__title">Cartwheel build details</h2>
+      <span class="panel__meta">Reference and counts are required</span>
+    </div>
+    <div class="panel__body">
+      <form class="form" method="post" action="/wheels" data-guard="build" novalidate>
+        <div class="form-grid">
+          <div class="field field--full">
+            <label for="reference">Build reference</label>
+            <input
+              class="input"
+              id="reference"
+              name="reference"
+              type="text"
+              value="{{ values.reference }}"
+              placeholder="CW-1053"
+              autocomplete="off"
+              spellcheck="false"
+              {% if field_errors.get('reference') %}aria-invalid="true" aria-describedby="reference-error"{% endif %}
+              required
+            />
+            <span class="hint">The workshop's own number for the wheel, e.g. CW-1053.</span>
+            {% if field_errors.get('reference') %}
+            <span class="field-error" id="reference-error">{{ field_errors.get('reference') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="field field--full">
+            <label for="client_id">Heritage client (optional)</label>
+            <select class="select" id="client_id" name="client_id" {% if field_errors.get('client_id') %}aria-invalid="true" aria-describedby="client-error"{% endif %}>
+              <option value="">No heritage commission — workshop wheel</option>
+              {% for client in clients %}
+              <option value="{{ client.id }}" {% if values.client_id == client.id|string %}selected{% endif %}>{{ client.name }}</option>
+              {% endfor %}
+            </select>
+            {% if field_errors.get('client_id') %}
+            <span class="field-error" id="client-error">{{ field_errors.get('client_id') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="field">
+            <label for="felloe_count">Felloe count</label>
+            <input
+              class="input"
+              id="felloe_count"
+              name="felloe_count"
+              type="number"
+              inputmode="numeric"
+              min="4"
+              max="20"
+              step="1"
+              value="{{ values.felloe_count }}"
+              {% if field_errors.get('felloe_count') %}aria-invalid="true" aria-describedby="felloe-error"{% endif %}
+              required
+            />
+            <span class="hint">Whole number, 4 to 20.</span>
+            {% if field_errors.get('felloe_count') %}
+            <span class="field-error" id="felloe-error">{{ field_errors.get('felloe_count') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="field">
+            <label for="spoke_count">Spoke count</label>
+            <input
+              class="input"
+              id="spoke_count"
+              name="spoke_count"
+              type="number"
+              inputmode="numeric"
+              min="8"
+              max="24"
+              step="1"
+              value="{{ values.spoke_count }}"
+              {% if field_errors.get('spoke_count') %}aria-invalid="true" aria-describedby="spoke-error"{% endif %}
+              required
+            />
+            <span class="hint">Whole number, 8 to 24.</span>
+            {% if field_errors.get('spoke_count') %}
+            <span class="field-error" id="spoke-error">{{ field_errors.get('spoke_count') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="field">
+            <label for="diameter_inches">Diameter in inches</label>
+            <input
+              class="input"
+              id="diameter_inches"
+              name="diameter_inches"
+              type="number"
+              inputmode="decimal"
+              min="24"
+              max="72"
+              step="0.5"
+              value="{{ values.diameter_inches }}"
+              placeholder="48.0"
+              {% if field_errors.get('diameter_inches') %}aria-invalid="true" aria-describedby="diameter-error"{% endif %}
+              required
+            />
+            <span class="hint">Measured over the iron tyre, 24 to 72 inches.</span>
+            {% if field_errors.get('diameter_inches') %}
+            <span class="field-error" id="diameter-error">{{ field_errors.get('diameter_inches') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="field">
+            <label for="status">Build status</label>
+            <select class="select" id="status" name="status">
+              {% for status, label in build_status_labels.items() %}
+              <option value="{{ status }}" {% if values.status == status %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field field--full">
+            <label for="notes">Workshop notes (optional)</label>
+            <textarea class="textarea" id="notes" name="notes" rows="4" placeholder="Timber, tyre band and anything the next wheelwright needs to know.">{{ values.notes }}</textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" data-primary>Save build</button>
+          <a class="btn btn--ghost" href="/wheels">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="panel panel--slide">
+    <div class="panel__head">
+      <h2 class="panel__title">Workshop guidance</h2>
+    </div>
+    <div class="panel__body stack">
+      <p class="prose">A traditional cartwheel holds 12 to 14 felloes and 12 to 16 spokes. Fewer felloes suit light barrow wheels; heavier wagon wheels sit at the top of both ranges.</p>
+      <dl class="summary-list">
+        <div>
+          <dt>Typical felloes</dt>
+          <dd>12–14</dd>
+        </div>
+        <div>
+          <dt>Typical spokes</dt>
+          <dd>12–16</dd>
+        </div>
+        <div>
+          <dt>Wagon diameter</dt>
+          <dd>48–56 in</dd>
+        </div>
+        <div>
+          <dt>Barrow diameter</dt>
+          <dd>32–40 in</dd>
+        </div>
+      </dl>
+      <p class="muted">Booking the iron tyre happens on the fitting schedule once the wheel is built.</p>
+      <a class="btn btn--ghost btn--sm" href="/schedule">Open the fitting schedule</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "auth_base.html" %}
+{% block content %}
+<div class="stack stack--tight">
+  <h1 class="auth__title">Sign in to the workshop</h1>
+  <p class="auth__sub">Build book, iron tyre schedule and heritage register — staff only.</p>
+</div>
+
+{% if error %}
+<div class="notice notice--error" role="alert">{{ error }}</div>
+{% endif %}
+
+<form class="form" method="post" action="/login" data-guard="signin" novalidate>
+  {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}" />{% endif %}
+  <div class="field">
+    <label for="email">Work email</label>
+    <input
+      class="input"
+      id="email"
+      name="email"
+      type="email"
+      value="{{ email }}"
+      autocomplete="username"
+      inputmode="email"
+      spellcheck="false"
+      {% if field_errors.get('email') %}aria-invalid="true" aria-describedby="email-error"{% endif %}
+      required
+    />
+    {% if field_errors.get('email') %}
+    <span class="field-error" id="email-error">{{ field_errors.get('email') }}</span>
+    {% endif %}
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <div class="password-wrap">
+      <input
+        class="input"
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        {% if field_errors.get('password') %}aria-invalid="true" aria-describedby="password-error"{% endif %}
+        required
+      />
+      <button
+        type="button"
+        class="password-toggle"
+        data-password-toggle="password"
+        aria-controls="password"
+        aria-pressed="false"
+        aria-label="Show password"
+      >Show</button>
+    </div>
+    {% if field_errors.get('password') %}
+    <span class="field-error" id="password-error">{{ field_errors.get('password') }}</span>
+    {% endif %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn--primary" data-primary>Sign in</button>
+    <a href="/register" class="btn btn--ghost">Create a staff account</a>
+  </div>
+</form>
+
+<div class="auth__foot">
+  <div class="demo-box">
+    <span><strong>Demo:</strong> <code>cenius@cenius.ai</code> / <code>cenius</code></span>
+    <span class="muted">Preview account, admin wheelwright.</span>
+    <form method="post" action="/login">
+      <input type="hidden" name="email" value="cenius@cenius.ai" />
+      <input type="hidden" name="password" value="cenius" />
+      <button type="submit" class="btn btn--ghost btn--sm">Sign in as the demo wheelwright</button>
+    </form>
+  </div>
+  <p>Every workshop page needs a staff account. There is no client-facing login.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block rail_filters %}
+<div class="rail__filters">
+  <div class="facet">
+    <span class="facet__title">Calendar</span>
+    <p class="muted">{{ month_total }} fitting{{ '' if month_total == 1 else 's' }} booked in {{ month_label }}.</p>
+    <div class="btn-row">
+      <a class="btn btn--ghost btn--sm" href="/schedule?month={{ previous_month }}">← Previous</a>
+      <a class="btn btn--ghost btn--sm" href="/schedule?month={{ next_month }}">Next →</a>
+    </div>
+    <a class="btn btn--ghost btn--sm" href="/schedule">Back to this month</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<a class="btn btn--ghost" href="/wheels">Cartwheel builds</a>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-layout">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel__head">
+        <div class="calendar-toolbar">
+          <h2 class="panel__title calendar-toolbar__month">{{ month_label }}</h2>
+          <a class="btn btn--ghost btn--sm" href="/schedule?month={{ previous_month }}" aria-label="Previous month">← Prev</a>
+          <a class="btn btn--ghost btn--sm" href="/schedule?month={{ next_month }}" aria-label="Next month">Next →</a>
+          <a class="btn btn--ghost btn--sm" href="/schedule">Today</a>
+        </div>
+      </div>
+      <div class="panel__body panel__body--flush">
+        <div class="calendar" role="grid" aria-label="Iron tyre fitting calendar for {{ month_label }}">
+          {% for weekday in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}
+          <div class="calendar__weekday" role="columnheader">{{ weekday }}</div>
+          {% endfor %}
+          {% for week in weeks %}
+          {% for cell in week %}
+          {% set key = cell.day.strftime('%Y-%m-%d') %}
+          {% set fittings = by_day.get(key, []) %}
+          <div
+            class="calendar__cell{% if not cell.in_month %} calendar__cell--out{% endif %}{% if cell.is_today %} calendar__cell--today{% endif %}"
+            role="gridcell"
+            aria-label="{{ cell.day.strftime('%d %B %Y') }}{% if fittings %}, {{ fittings|length }} fitting(s){% endif %}"
+          >
+            <span class="calendar__date">
+              <span>{{ cell.day.day }}</span>
+              {% if fittings %}<span class="calendar__count">{{ fittings|length }}</span>{% endif %}
+            </span>
+            {% for booking in fittings[:4] %}
+            <a
+              class="fitting-chip{% if booking.status == 'completed' %} fitting-chip--completed{% endif %}{% if booking.status == 'cancelled' %} fitting-chip--cancelled{% endif %}"
+              href="/wheels/{{ booking.wheel.id }}"
+              title="{{ booking.time_display }} {{ booking.wheel.reference }} — {{ booking.status_label }}"
+            >
+              <span class="fitting-chip__time">{{ booking.time_display }}</span>
+              <span class="fitting-chip__ref">{{ booking.wheel.reference }}</span>
+            </a>
+            {% endfor %}
+            {% if fittings|length > 4 %}
+            <span class="calendar__count">+{{ fittings|length - 4 }} more</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <div class="agenda" aria-label="Fittings this month">
+      {% for booking in agenda %}
+      <a class="agenda__item" href="/wheels/{{ booking.wheel.id }}">
+        <span class="agenda__date">{{ booking.scheduled_at.strftime('%d %b') }} {{ booking.time_display }}</span>
+        <span>{{ booking.wheel.reference }} · {{ booking.wheel.client_name }}</span>
+      </a>
+      {% endfor %}
+    </div>
+
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title">Fittings in {{ month_label }}</h2>
+        <span class="panel__meta">One wheel per slot</span>
+      </div>
+      <div class="panel__body">
+        {% if month_total %}
+        <div class="fitting-list stagger">
+          {% for booking in agenda %}
+          <article class="fitting-row">
+            <span class="fitting-row__when">{{ booking.scheduled_at|human_datetime }}</span>
+            <span class="fitting-row__main">
+              <a class="ref mono-num" href="/wheels/{{ booking.wheel.id }}">{{ booking.wheel.reference }}</a>
+              <span class="muted">{{ booking.wheel.client_name }}{% if booking.notes %} · {{ booking.notes }}{% endif %}</span>
+            </span>
+            <span class="btn-row">
+              <span class="pill pill--{{ booking.status }}">{{ booking.status_label }}</span>
+              {% if booking.status == 'scheduled' %}
+              <form method="post" action="/schedule/{{ booking.id }}/status">
+                <input type="hidden" name="status" value="completed" />
+                <button type="submit" class="btn btn--ghost btn--sm">Complete</button>
+              </form>
+              <form method="post" action="/schedule/{{ booking.id }}/status">
+                <input type="hidden" name="status" value="cancelled" />
+                <button type="submit" class="btn btn--danger btn--sm">Cancel</button>
+              </form>
+              {% endif %}
+            </span>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+          <p class="empty__text">No fittings are booked in {{ month_label }}. Use the booking panel to take the first slot.</p>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <aside class="panel panel--slide" id="book-fitting">
+    <div class="panel__head">
+      <h2 class="panel__title">Book an iron tyre fitting</h2>
+      <span class="panel__meta">One wheel per slot</span>
+    </div>
+    <div class="panel__body">
+      {% if field_errors %}
+      <div class="notice notice--error" role="alert">That slot could not be booked. Check the panel below.</div>
+      {% endif %}
+
+      <form class="form" method="post" action="/schedule" data-guard="fitting" novalidate>
+        <div class="field">
+          <label for="wheel_id">Wheel</label>
+          <select class="select" id="wheel_id" name="wheel_id" {% if field_errors.get('wheel_id') %}aria-invalid="true" aria-describedby="wheel-error"{% endif %} required>
+            <option value="">Choose a wheel…</option>
+            {% for wheel in wheels %}
+            <option value="{{ wheel.id }}" {% if values.wheel_id == wheel.id|string %}selected{% endif %}>{{ wheel.reference }} — {{ wheel.client_name }}</option>
+            {% endfor %}
+          </select>
+          {% if field_errors.get('wheel_id') %}
+          <span class="field-error" id="wheel-error">{{ field_errors.get('wheel_id') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="date">Fitting date</label>
+          <input
+            class="input"
+            id="date"
+            name="date"
+            type="date"
+            value="{{ values.date }}"
+            {% if field_errors.get('date') %}aria-invalid="true" aria-describedby="date-error"{% endif %}
+            required
+          />
+          {% if field_errors.get('date') %}
+          <span class="field-error" id="date-error">{{ field_errors.get('date') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="time">Start time</label>
+          <select class="select" id="time" name="time" {% if field_errors.get('time') %}aria-invalid="true" aria-describedby="time-error"{% endif %} required>
+            {% for slot in slot_times %}
+            <option value="{{ slot }}" {% if values.time == slot %}selected{% endif %}>{{ slot }}</option>
+            {% endfor %}
+          </select>
+          <span class="hint">Workshop slots run hourly, 08:00 to 17:00.</span>
+          {% if field_errors.get('time') %}
+          <span class="field-error" id="time-error">{{ field_errors.get('time') }}</span>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label for="notes">Notes for the fitting</label>
+          <textarea class="textarea" id="notes" name="notes" rows="3" placeholder="Anything the wheelwright should bring to the tyre.">{{ values.notes }}</textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" data-primary>Book fitting</button>
+        </div>
+      </form>
+    </div>
+  </aside>
+</div>
+{% endblock %}
