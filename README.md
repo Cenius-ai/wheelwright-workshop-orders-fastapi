@@ -72,7 +72,7 @@ _Full guide: [`USAGE.md`](USAGE.md)_
 
 ## Architecture
 
-Everything runs out of the box: a FastAPI codebase (72 files). `install.sh` takes care of packages and initial data in a single pass; nothing else is required before launching. Top-level layout: `app/`, `scripts/`, `tests/`. Step-by-step setup guide: [`INSTALL.md`](INSTALL.md).
+Everything runs out of the box: a FastAPI codebase (59 files). `install.sh` takes care of packages and initial data in a single pass; nothing else is required before launching. Top-level layout: `app/`, `scripts/`, `tests/`. Step-by-step setup guide: [`INSTALL.md`](INSTALL.md).
 
 ## FAQ
 
